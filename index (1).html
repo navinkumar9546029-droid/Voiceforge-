@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoiceForge — AI Text to Speech</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080B12;
+  --surface: #0F1421;
+  --surface2: #161B2C;
+  --accent: #3EFFA8;
+  --accent2: #7C5CFC;
+  --text: #E8EDF8;
+  --text2: #8B93A8;
+  --border: rgba(255,255,255,0.08);
+  --radius: 14px;
+  --danger: #FF6B6B;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  padding: 2.5rem 1rem 4rem;
+  background-image: radial-gradient(ellipse at 20% 0%, rgba(124,92,252,0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 80% 0%, rgba(62,255,168,0.08) 0%, transparent 50%);
+}
+.container { max-width: 760px; margin: 0 auto; }
+
+/* HEADER */
+.header { text-align: center; margin-bottom: 3rem; }
+.logo {
+  display: inline-flex; align-items: center; gap: 12px; margin-bottom: 0.75rem;
+}
+.logo-icon {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+}
+.logo-name { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+.tagline { color: var(--text2); font-size: 0.875rem; margin-top: 0.25rem; }
+.badge {
+  display: inline-block; font-size: 0.65rem; padding: 2px 10px; border-radius: 20px;
+  background: rgba(62,255,168,0.1); color: var(--accent);
+  border: 1px solid rgba(62,255,168,0.2); margin-left: 8px; vertical-align: middle;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+/* CARDS */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.75rem;
+  margin-bottom: 1rem;
+}
+.card-label {
+  font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--text2); margin-bottom: 1rem;
+}
+
+/* TEXTAREA */
+.text-wrapper { position: relative; }
+textarea {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text); font-family: 'Syne', sans-serif;
+  font-size: 0.95rem; line-height: 1.65; padding: 1.1rem 1.1rem 2.5rem;
+  resize: vertical; min-height: 150px; outline: none; transition: border-color 0.2s;
+}
+textarea:focus { border-color: rgba(62,255,168,0.4); }
+textarea::placeholder { color: var(--text2); opacity: 0.6; }
+.char-info {
+  position: absolute; bottom: 0.6rem; right: 0.75rem;
+  font-size: 0.7rem; color: var(--text2); font-family: 'JetBrains Mono', monospace;
+}
+.char-info.warn { color: var(--danger); }
+
+/* STATUS */
+.status-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.status-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 0.75rem; color: var(--text2); padding: 0.3rem 0.85rem;
+  background: var(--surface2); border-radius: 20px; border: 1px solid var(--border);
+}
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text2); transition: background 0.3s; }
+.dot.playing { background: var(--accent); animation: blink 1s ease-in-out infinite; }
+.dot.paused { background: #F4C75A; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* WAVEFORM */
+.waveform {
+  display: flex; align-items: center; justify-content: center;
+  gap: 3px; height: 52px; margin: 1.5rem 0;
+}
+.wb {
+  width: 4px; background: var(--accent); border-radius: 2px;
+  opacity: 0.2; height: 4px; transition: opacity 0.4s;
+}
+.wb.active {
+  opacity: 1;
+  animation: wave var(--d) ease-in-out infinite;
+  animation-delay: var(--dl);
+}
+@keyframes wave { 0%,100% { height: 4px; } 50% { height: var(--h); } }
+
+/* BUTTONS */
+.btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 0.7rem 1.4rem; border-radius: 9px; font-family: 'Syne', sans-serif;
+  font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none;
+  transition: all 0.15s; white-space: nowrap; letter-spacing: 0.01em;
+}
+.btn-play {
+  background: var(--accent); color: #060910; flex: 1; max-width: 160px;
+  box-shadow: 0 0 20px rgba(62,255,168,0.2);
+}
+.btn-play:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 4px 24px rgba(62,255,168,0.3); }
+.btn-play:active { transform: translateY(0); }
+.btn-outline {
+  background: transparent; color: var(--text); border: 1px solid var(--border);
+}
+.btn-outline:hover { border-color: rgba(62,255,168,0.4); color: var(--accent); background: rgba(62,255,168,0.04); }
+.btn-danger { background: transparent; color: var(--danger); border: 1px solid rgba(255,107,107,0.25); }
+.btn-danger:hover { background: rgba(255,107,107,0.08); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; filter: none !important; }
+
+/* VOICE SETTINGS */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 520px) { .grid-2 { grid-template-columns: 1fr; } .btn-play { max-width: 100%; } }
+.field label {
+  display: block; font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--text2); margin-bottom: 0.5rem;
+}
+select {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: 'Syne', sans-serif;
+  font-size: 0.85rem; padding: 0.65rem 0.9rem; outline: none; cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%238B93A8' d='M5 7L0 2h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 0.85rem center;
+  transition: border-color 0.2s;
+}
+select:hover, select:focus { border-color: rgba(62,255,168,0.3); }
+
+/* SLIDERS */
+.sliders { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.25rem; }
+.slider-row { display: flex; align-items: center; gap: 1rem; }
+.sl-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text2); width: 54px; flex-shrink: 0; }
+input[type="range"] {
+  flex: 1; -webkit-appearance: none; height: 3px;
+  background: var(--surface2); border-radius: 2px; outline: none; cursor: pointer;
+  border: 1px solid var(--border);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--accent); cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 0 8px rgba(62,255,168,0.3);
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.25); box-shadow: 0 0 14px rgba(62,255,168,0.5);
+}
+.sl-val {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+  color: var(--accent); width: 38px; text-align: right;
+}
+
+/* VOICE PREVIEW TAGS */
+.voice-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.75rem; }
+.vtag {
+  font-size: 0.68rem; padding: 3px 10px; border-radius: 20px;
+  border: 1px solid var(--border); color: var(--text2); cursor: pointer;
+  transition: all 0.15s; background: transparent;
+}
+.vtag:hover { border-color: var(--accent); color: var(--accent); background: rgba(62,255,168,0.05); }
+.vtag.active { background: rgba(62,255,168,0.1); border-color: rgba(62,255,168,0.3); color: var(--accent); }
+
+/* INFO BANNER */
+.info-banner {
+  background: rgba(124,92,252,0.06); border: 1px solid rgba(124,92,252,0.2);
+  border-radius: 10px; padding: 1rem 1.25rem;
+  font-size: 0.8rem; color: var(--text2); line-height: 1.6; margin-top: 0.75rem;
+}
+.info-banner strong { color: var(--accent2); }
+
+/* FOOTER */
+.footer {
+  text-align: center; font-size: 0.75rem; color: var(--text2);
+  margin-top: 2rem; line-height: 2;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2v20M8 6v12M4 9v6M16 6v12M20 9v6" stroke="#080B12" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="logo-name">VoiceForge</span>
+    </div>
+    <p class="tagline">AI-Powered Text to Speech Studio <span class="badge">Free</span></p>
+  </div>
+
+  <!-- MAIN INPUT CARD -->
+  <div class="card">
+    <div class="status-row">
+      <div class="card-label" style="margin-bottom:0">Text Input</div>
+      <div class="status-pill">
+        <div class="dot" id="dot"></div>
+        <span id="status-txt">Ready</span>
+      </div>
+    </div>
+
+    <div class="text-wrapper">
+      <textarea id="txt" placeholder="Type or paste your text here... Supports all languages. Up to 5000 characters.">Welcome to VoiceForge! I am your AI-powered text to speech assistant. Type anything here and I will convert it to natural, human-like speech instantly. No signup required.</textarea>
+      <div class="char-info" id="char-info">0 / 5000</div>
+    </div>
+
+    <!-- WAVEFORM VISUALIZER -->
+    <div class="waveform" id="waveform"></div>
+
+    <!-- CONTROLS -->
+    <div class="btn-row">
+      <button class="btn btn-play" id="play-btn" onclick="handlePlay()">
+        <svg id="play-icon" width="14" height="14" viewBox="0 0 24 24" fill="#060910"><polygon points="5,3 19,12 5,21"/></svg>
+        <span id="play-text">Play</span>
+      </button>
+      <button class="btn btn-outline" onclick="handleStop()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+        Stop
+      </button>
+      <button class="btn btn-outline" onclick="handleDownload()" id="dl-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </button>
+    </div>
+  </div>
+
+  <!-- VOICE SETTINGS CARD -->
+  <div class="card">
+    <div class="card-label">Voice Settings</div>
+    <div class="grid-2">
+      <div class="field">
+        <label>Language</label>
+        <select id="lang-sel" onchange="filterVoices()">
+          <option value="">All Languages</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Voice</label>
+        <select id="voice-sel"></select>
+      </div>
+    </div>
+
+    <!-- Quick voice presets -->
+    <div class="voice-tags" id="voice-tags">
+      <button class="vtag active" onclick="setLang('')">All</button>
+      <button class="vtag" onclick="setLang('en')">🇺🇸 English</button>
+      <button class="vtag" onclick="setLang('hi')">🇮🇳 Hindi</button>
+      <button class="vtag" onclick="setLang('fr')">🇫🇷 French</button>
+      <button class="vtag" onclick="setLang('de')">🇩🇪 German</button>
+      <button class="vtag" onclick="setLang('es')">🇪🇸 Spanish</button>
+      <button class="vtag" onclick="setLang('ja')">🇯🇵 Japanese</button>
+      <button class="vtag" onclick="setLang('zh')">🇨🇳 Chinese</button>
+      <button class="vtag" onclick="setLang('ar')">🇸🇦 Arabic</button>
+      <button class="vtag" onclick="setLang('pt')">🇧🇷 Portuguese</button>
+    </div>
+
+    <div class="sliders">
+      <div class="slider-row">
+        <span class="sl-label">Speed</span>
+        <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1" oninput="updateVal('rate')">
+        <span class="sl-val" id="rate-val">1.0×</span>
+      </div>
+      <div class="slider-row">
+        <span class="sl-label">Pitch</span>
+        <input type="range" id="pitch" min="0.5" max="2" step="0.1" value="1" oninput="updateVal('pitch')">
+        <span class="sl-val" id="pitch-val">1.0×</span>
+      </div>
+      <div class="slider-row">
+        <span class="sl-label">Volume</span>
+        <input type="range" id="vol" min="0" max="1" step="0.05" value="1" oninput="updateVal('vol')">
+        <span class="sl-val" id="vol-val">100%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFO CARD -->
+  <div class="info-banner">
+    <strong>Demo Version</strong> — Uses your browser's built-in speech engine (Web Speech API).<br>
+    For <strong>premium AI voices</strong> (OpenAI TTS / ElevenLabs), high-quality MP3 downloads, and production deployment — download the full source code package from the chat above.
+  </div>
+
+  <div class="footer">
+    No login required &nbsp;·&nbsp; 0 data stored &nbsp;·&nbsp; Works offline<br>
+    VoiceForge &copy; 2025 &nbsp;·&nbsp; Built with Web Speech API
+  </div>
+
+</div>
+
+<script>
+const synth = window.speechSynthesis;
+let allVoices = [], filteredVoices = [], isPlaying = false, isPaused = false;
+
+// ── WAVEFORM ──────────────────────────────────────────────────────
+const peaks = [6,10,18,30,40,46,44,36,42,46,38,28,44,34,22,38,46,40,30,20,34,44,40,32,22,14,26,36,20,12,8,4];
+const wfEl = document.getElementById('waveform');
+for (let i = 0; i < 32; i++) {
+  const b = document.createElement('div');
+  b.className = 'wb'; b.id = 'wb' + i;
+  b.style.cssText = `--d:${(0.45+Math.random()*0.9).toFixed(2)}s;--dl:${(i*0.045).toFixed(2)}s;--h:${peaks[i]||16}px`;
+  wfEl.appendChild(b);
+}
+function setWave(on) {
+  document.querySelectorAll('.wb').forEach(b => b.classList.toggle('active', on));
+  const dot = document.getElementById('dot');
+  dot.className = 'dot' + (on ? ' playing' : (isPaused ? ' paused' : ''));
+  document.getElementById('status-txt').textContent = on ? 'Playing...' : (isPaused ? 'Paused' : 'Ready');
+}
+
+// ── VOICES ────────────────────────────────────────────────────────
+function loadVoices() {
+  allVoices = synth.getVoices();
+  if (!allVoices.length) return;
+  const langs = [...new Set(allVoices.map(v => v.lang.split('-')[0]))].sort();
+  const ls = document.getElementById('lang-sel');
+  const LANG_NAMES = {en:'English',hi:'Hindi',fr:'French',de:'German',es:'Spanish',it:'Italian',
+    ja:'Japanese',ko:'Korean',zh:'Chinese',pt:'Portuguese',ar:'Arabic',ru:'Russian',nl:'Dutch',
+    pl:'Polish',sv:'Swedish',tr:'Turkish',da:'Danish',fi:'Finnish',nb:'Norwegian'};
+  ls.innerHTML = '<option value="">All Languages</option>';
+  langs.forEach(l => {
+    const o = document.createElement('option');
+    o.value = l; o.textContent = LANG_NAMES[l] || l.toUpperCase();
+    ls.appendChild(o);
+  });
+  filterVoices();
+}
+function filterVoices() {
+  const lang = document.getElementById('lang-sel').value;
+  filteredVoices = lang ? allVoices.filter(v => v.lang.startsWith(lang)) : allVoices;
+  const vs = document.getElementById('voice-sel');
+  vs.innerHTML = '';
+  if (!filteredVoices.length) { vs.innerHTML = '<option>No voices available</option>'; return; }
+  filteredVoices.forEach((v, i) => {
+    const o = document.createElement('option'); o.value = i;
+    const female = ['female','woman','she','samantha','victoria','karen','moira','tessa','alice','fiona','ava','siri','cortana'];
+    const isF = female.some(n => v.name.toLowerCase().includes(n));
+    const clean = v.name.replace('Microsoft ','').replace(' Online (Natural)','').replace(' Desktop','');
+    o.textContent = (isF ? '♀ ':'♂ ') + clean + ' (' + v.lang + ')';
+    vs.appendChild(o);
+  });
+}
+function setLang(l) {
+  document.getElementById('lang-sel').value = l;
+  document.querySelectorAll('.vtag').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  filterVoices();
+}
+synth.onvoiceschanged = loadVoices;
+setTimeout(loadVoices, 100);
+
+// ── CHAR COUNT ────────────────────────────────────────────────────
+const txtEl = document.getElementById('txt');
+const charEl = document.getElementById('char-info');
+txtEl.addEventListener('input', () => {
+  const n = txtEl.value.length;
+  charEl.textContent = n + ' / 5000';
+  charEl.className = 'char-info' + (n > 4500 ? ' warn' : '');
+});
+charEl.textContent = txtEl.value.length + ' / 5000';
+
+// ── SLIDERS ───────────────────────────────────────────────────────
+function updateVal(id) {
+  const v = parseFloat(document.getElementById(id).value);
+  const el = document.getElementById(id + '-val');
+  if (id === 'vol') el.textContent = Math.round(v * 100) + '%';
+  else el.textContent = v.toFixed(1) + '×';
+}
+
+// ── PLAYBACK ──────────────────────────────────────────────────────
+function setPlayBtnState(playing) {
+  const icon = document.getElementById('play-icon');
+  const txt = document.getElementById('play-text');
+  if (playing) {
+    icon.innerHTML = '<rect x="6" y="4" width="4" height="16" fill="#060910"/><rect x="14" y="4" width="4" height="16" fill="#060910"/>';
+    txt.textContent = 'Pause';
+  } else {
+    icon.innerHTML = '<polygon points="5,3 19,12 5,21" fill="#060910"/>';
+    txt.textContent = isPaused ? 'Resume' : 'Play';
+  }
+}
+
+function handlePlay() {
+  if (isPlaying) {
+    synth.pause(); isPlaying = false; isPaused = true;
+    setWave(false); setPlayBtnState(false); return;
+  }
+  if (isPaused) {
+    synth.resume(); isPlaying = true; isPaused = false;
+    setWave(true); setPlayBtnState(true); return;
+  }
+  const text = txtEl.value.trim();
+  if (!text) { alert('Please enter some text to convert!'); return; }
+  synth.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  const idx = parseInt(document.getElementById('voice-sel').value) || 0;
+  if (filteredVoices[idx]) utt.voice = filteredVoices[idx];
+  utt.rate = parseFloat(document.getElementById('rate').value);
+  utt.pitch = parseFloat(document.getElementById('pitch').value);
+  utt.volume = parseFloat(document.getElementById('vol').value);
+  utt.onstart = () => { isPlaying = true; isPaused = false; setWave(true); setPlayBtnState(true); };
+  utt.onend = utt.onerror = () => { isPlaying = false; isPaused = false; setWave(false); setPlayBtnState(false); };
+  synth.speak(utt);
+}
+
+function handleStop() {
+  synth.cancel(); isPlaying = false; isPaused = false;
+  setWave(false); setPlayBtnState(false);
+}
+
+function handleDownload() {
+  const text = txtEl.value.trim();
+  if (!text) { alert('Enter text first!'); return; }
+  alert('💡 MP3 Download requires the backend (OpenAI TTS API).\n\nTo enable downloads:\n1. Set up the Node.js backend from the source code\n2. Add your OpenAI API key in .env\n3. Run: npm start\n\nThe backend generates high-quality MP3 files via OpenAI TTS.');
+}
+</script>
+</body>
+</html>
